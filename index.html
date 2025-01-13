@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Viewer with Drag Functionality</title>
+    <style>
+        .imageSet {
+            margin-bottom: 20px;
+            margin-top: 20px;
+            /* Added margin-top */
+        }
+
+        .imageSet .setNumber {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .imageSet .imageContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .imageSet .imageWrapper {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            width: 450px;
+            /* Fixed width */
+            height: 450px;
+            /* Fixed height */
+            position: relative;
+        }
+
+        .imageSet .imageWrapper img {
+            position: absolute;
+            width: auto;
+            height: 100%;
+            object-fit: cover;
+            /* Ensure image fills container */
+            cursor: move;
+            /* Indicates image can be moved */
+        }
+    </style>
+</head>
+
+<body>
+    <input id="urlInput" type="text" placeholder="Paste up to 3 URLs separated by commas">
+    <button onclick="addImageSet()">Add Image Set</button>
+    <div id="allSets"></div>
+
+    <script>
+        let setCounter = 0;
+
+        function addImageSet() {
+            const urlsString = document.getElementById('urlInput').value;
+            const urls = urlsString.split(',').map(url => url.trim());
+            if (urls.length > 0) {
+                const setContainer = document.createElement('div');
+                setContainer.className = 'imageSet';
+                setCounter++;
+
+                // Display set number
+                const setNumber = document.createElement('div');
+                setNumber.className = 'setNumber';
+                setNumber.textContent = `Set ${setCounter}`;
+                setContainer.appendChild(setNumber);
+
+                // Image container for this set
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'imageContainer';
+                setContainer.appendChild(imageContainer);
+
+                urls.forEach(url => {
+                    if (url) {
+                        const imageWrapper = document.createElement('div');
+                        imageWrapper.className = 'imageWrapper';
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'Image';
+                        img.onload = function () {
+                            this.style.width = `${this.naturalWidth * 350 / this.naturalHeight}px`; // Scale width to maintain aspect ratio
+                        };
+                        makeDraggable(img);
+                        imageWrapper.appendChild(img);
+                        imageContainer.appendChild(imageWrapper);
+                    }
+                });
+
+                document.getElementById('allSets').appendChild(setContainer);
+                document.getElementById('urlInput').value = '';
+            }
+        }
+
+        function makeDraggable(element) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            element.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                let newLeft = element.offsetLeft - pos1;
+                let newTop = element.offsetTop - pos2;
+
+                if (newLeft > 0) newLeft = 0;
+                if (newTop > 0) newTop = 0;
+                const maxLeft = element.parentElement.offsetWidth - element.width;
+                const maxTop = element.parentElement.offsetHeight - element.height;
+                if (newLeft < maxLeft) newLeft = maxLeft;
+                if (newTop < maxTop) newTop = maxTop;
+
+                element.style.top = newTop + 'px';
+                element.style.left = newLeft + 'px';
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        // Drag and drop functionality for the input field
+        document.getElementById('urlInput').addEventListener('drop', function (e) {
+            e.preventDefault();
+            this.value = e.dataTransfer.getData('text');
+            addImageSet();
+        });
+        document.getElementById('urlInput').addEventListener('dragover', function (e) {
+            e.preventDefault();
+        });
+    </script>
+</body>
+
+</html>
